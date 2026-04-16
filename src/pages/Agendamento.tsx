@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-// @ts-ignore
-const API_URL = import.meta.env?.VITE_API_URL || "http://161.97.183.125:3000";
+const API_URL = "http://161.97.183.125:8080";
 
 export default function Agendamento() {
   const [activeTab, setActiveTab] = useState<"agendar" | "consultar">("agendar");
@@ -25,7 +24,7 @@ export default function Agendamento() {
   const [consultaMsg, setConsultaMsg] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/api/especialidades`)
+    fetch(`${API_URL}/especialidades`)
       .then(res => res.json())
       .then(data => setEspecialidades(data.especialidades))
       .catch(err => console.error(err));
@@ -33,7 +32,7 @@ export default function Agendamento() {
 
   useEffect(() => {
     if (selectedEspecialidade) {
-      fetch(`${API_URL}/api/profissionais?especialidade=${encodeURIComponent(selectedEspecialidade)}`)
+      fetch(`${API_URL}/profissionais?especialidade=${encodeURIComponent(selectedEspecialidade)}`)
         .then(res => res.json())
         .then(data => setProfissionais(data.resultados))
         .catch(err => console.error(err));
@@ -50,7 +49,7 @@ export default function Agendamento() {
     const dataFormatada = `${dia}/${mes}/${ano}`;
 
     try {
-      const res = await fetch(`${API_URL}/api/agendar`, {
+      const res = await fetch(`${API_URL}/agendar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -81,7 +80,7 @@ export default function Agendamento() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/consultar`, {
+      const res = await fetch(`${API_URL}/consultar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cpf: consultaCpf })
@@ -105,7 +104,7 @@ export default function Agendamento() {
     if (!window.confirm("Tem certeza que deseja cancelar este agendamento?")) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/cancelar/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/cancelar/${id}`, { method: "DELETE" });
       if (res.ok) {
         alert("Agendamento cancelado com sucesso");
         handleConsultar(); // Refresh list

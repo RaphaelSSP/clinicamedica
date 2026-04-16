@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 
-// @ts-ignore
-const API_URL = import.meta.env?.VITE_API_URL || "http://161.97.183.125:3000";
+const API_URL = "http://161.97.183.125:8080";
 
 interface Message {
   id: string;
@@ -42,7 +41,7 @@ export default function Typebot() {
     setIsTyping(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/chat`, {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, context }),
