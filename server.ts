@@ -58,17 +58,15 @@ pool.connect()
         );
       `);
       
-      const res = await client.query('SELECT COUNT(*) FROM profissionais');
-      if (parseInt(res.rows[0].count) === 0) {
-        await client.query(`
-          INSERT INTO profissionais (id, nome, especialidade, disponibilidade) VALUES
-          ('1', 'Dr. Ricardo Santos', 'Clínico Geral', '["Segunda-feira: 09:00-12:00", "Quarta-feira: 14:00-18:00"]'),
-          ('2', 'Dra. Ana Oliveira', 'Nutricionista', '["Terça-feira: 10:00-13:00", "Quinta-feira: 15:00-19:00"]'),
-          ('3', 'Dra. Beatriz Costa', 'Cardiologista', '["Segunda-feira: 14:00-18:00", "Sexta-feira: 09:00-12:00"]'),
-          ('4', 'Dr. Carlos Mendes', 'Dermatologista', '["Terça-feira: 09:00-12:00", "Quinta-feira: 14:00-18:00"]'),
-          ('5', 'Dra. Sofia Pereira', 'Pediatra', '["Quarta-feira: 09:00-13:00", "Sexta-feira: 14:00-17:00"]')
-        `);
-      }
+      await client.query(`
+        INSERT INTO profissionais (id, nome, especialidade, disponibilidade) VALUES
+        ('1', 'Dr. Ricardo Santos', 'Clinica Geral', '["Segunda-feira: 09:00-12:00", "Quarta-feira: 14:00-18:00"]'),
+        ('2', 'Dra. Ana Oliveira', 'Nutrição', '["Terça-feira: 10:00-13:00", "Quinta-feira: 15:00-19:00"]'),
+        ('3', 'Dra. Beatriz Costa', 'Cardiologia', '["Segunda-feira: 14:00-18:00", "Sexta-feira: 09:00-12:00"]'),
+        ('4', 'Dr. Carlos Mendes', 'Dermatologia', '["Terça-feira: 09:00-12:00", "Quinta-feira: 14:00-18:00"]'),
+        ('5', 'Dra. Sofia Pereira', 'Pediatria', '["Quarta-feira: 09:00-13:00", "Sexta-feira: 14:00-17:00"]')
+        ON CONFLICT (id) DO UPDATE SET especialidade = EXCLUDED.especialidade;
+      `);
     } catch (err) {
       console.error("Error initializing DB tables:", err);
     } finally {
@@ -93,11 +91,11 @@ if (!fs.existsSync(PROFESSIONALS_FILE)) {
     PROFESSIONALS_FILE,
     JSON.stringify(
       [
-        { id: "1", nome: "Dr. Ricardo Santos", especialidade: "Clínico Geral", disponibilidade: ["Segunda-feira: 09:00-12:00", "Quarta-feira: 14:00-18:00"] },
-        { id: "2", nome: "Dra. Ana Oliveira", especialidade: "Nutricionista", disponibilidade: ["Terça-feira: 10:00-13:00", "Quinta-feira: 15:00-19:00"] },
-        { id: "3", nome: "Dra. Beatriz Costa", especialidade: "Cardiologista", disponibilidade: ["Segunda-feira: 14:00-18:00", "Sexta-feira: 09:00-12:00"] },
-        { id: "4", nome: "Dr. Carlos Mendes", especialidade: "Dermatologista", disponibilidade: ["Terça-feira: 09:00-12:00", "Quinta-feira: 14:00-18:00"] },
-        { id: "5", nome: "Dra. Sofia Pereira", especialidade: "Pediatra", disponibilidade: ["Quarta-feira: 09:00-13:00", "Sexta-feira: 14:00-17:00"] },
+        { id: "1", nome: "Dr. Ricardo Santos", especialidade: "Clinica Geral", disponibilidade: ["Segunda-feira: 09:00-12:00", "Quarta-feira: 14:00-18:00"] },
+        { id: "2", nome: "Dra. Ana Oliveira", especialidade: "Nutrição", disponibilidade: ["Terça-feira: 10:00-13:00", "Quinta-feira: 15:00-19:00"] },
+        { id: "3", nome: "Dra. Beatriz Costa", especialidade: "Cardiologia", disponibilidade: ["Segunda-feira: 14:00-18:00", "Sexta-feira: 09:00-12:00"] },
+        { id: "4", nome: "Dr. Carlos Mendes", especialidade: "Dermatologia", disponibilidade: ["Terça-feira: 09:00-12:00", "Quinta-feira: 14:00-18:00"] },
+        { id: "5", nome: "Dra. Sofia Pereira", especialidade: "Pediatria", disponibilidade: ["Quarta-feira: 09:00-13:00", "Sexta-feira: 14:00-17:00"] },
       ],
       null,
       2
