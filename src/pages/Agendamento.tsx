@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from "react";
 
+const ESPECIALIDADES_FALLBACK = [
+  "Clínico Geral",
+  "Nutricionista",
+  "Cardiologista",
+  "Dermatologista",
+  "Pediatra",
+];
+
+const PROFISSIONAIS_FALLBACK: Record<string, { id: string; nome: string; especialidade: string }[]> = {
+  "Clínico Geral": [{ id: "offline-1", nome: "Dr. Ricardo Santos", especialidade: "Clínico Geral" }],
+  Nutricionista: [{ id: "offline-2", nome: "Dra. Ana Oliveira", especialidade: "Nutricionista" }],
+  Cardiologista: [{ id: "offline-3", nome: "Dra. Beatriz Costa", especialidade: "Cardiologista" }],
+  Dermatologista: [{ id: "offline-4", nome: "Dr. Carlos Mendes", especialidade: "Dermatologista" }],
+  Pediatra: [{ id: "offline-5", nome: "Dra. Sofia Pereira", especialidade: "Pediatra" }],
+};
+
 export default function Agendamento() {
   const [activeTab, setActiveTab] = useState<"agendar" | "consultar">("agendar");
   
@@ -8,6 +24,7 @@ export default function Agendamento() {
   const [profissionais, setProfissionais] = useState<any[]>([]);
   const [selectedEspecialidade, setSelectedEspecialidade] = useState("");
   const [especialidadesErro, setEspecialidadesErro] = useState("");
+  const [profissionaisErro, setProfissionaisErro] = useState("");
   const [formData, setFormData] = useState({
     nome: "",
     cpf: "",
@@ -48,13 +65,21 @@ export default function Agendamento() {
             const profData = await profRes.json();
             const lista = Array.isArray(profData?.resultados) ? profData.resultados : [];
             const derivadas = Array.from(new Set(lista.map((p: any) => p?.especialidade).filter(Boolean))).sort() as string[];
-            setEspecialidades(derivadas);
-            setEspecialidadesErro(derivadas.length > 0 ? "" : "Não foi possível carregar especialidades no momento.");
+            if (derivadas.length > 0) {
+              setEspecialidades(derivadas);
+              setEspecialidadesErro("");
+            } else {
+              setEspecialidades(ESPECIALIDADES_FALLBACK);
+              setEspecialidadesErro("Especialidades carregadas em modo offline.");
+            }
             // #region agent log
             fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2',location:'src/pages/Agendamento.tsx:42',message:'especialidades fallback executed',data:{ok:profRes.ok,derivadas:derivadas.length},timestamp:Date.now()})}).catch(()=>{});
             // #endregion
           })
-          .catch(() => setEspecialidadesErro("Não foi possível carregar especialidades no momento."));
+          .catch(() => {
+            setEspecialidades(ESPECIALIDADES_FALLBACK);
+            setEspecialidadesErro("Especialidades carregadas em modo offline.");
+          });
         console.error(err);
       });
   }, []);
@@ -72,15 +97,29 @@ export default function Agendamento() {
           // #endregion
           return data;
         })
-        .then(data => setProfissionais(data.resultados))
+        .then(data => {
+          const resultados = Array.isArray(data?.resultados) ? data.resultados : [];
+          if (resultados.length > 0) {
+            setProfissionais(resultados);
+            setProfissionaisErro("");
+            return;
+          }
+          const fallback = PROFISSIONAIS_FALLBACK[selectedEspecialidade] || [];
+          setProfissionais(fallback);
+          setProfissionaisErro(fallback.length > 0 ? "Profissionais carregados em modo offline." : "Nenhum profissional disponível para esta especialidade.");
+        })
         .catch(err => {
           // #region agent log
           fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4',location:'src/pages/Agendamento.tsx:45',message:'profissionais fetch failed',data:{error:String(err),selectedEspecialidade},timestamp:Date.now()})}).catch(()=>{});
           // #endregion
+          const fallback = PROFISSIONAIS_FALLBACK[selectedEspecialidade] || [];
+          setProfissionais(fallback);
+          setProfissionaisErro(fallback.length > 0 ? "Profissionais carregados em modo offline." : "Nenhum profissional disponível para esta especialidade.");
           console.error(err);
         });
     } else {
       setProfissionais([]);
+      setProfissionaisErro("");
     }
   }, [selectedEspecialidade]);
 
@@ -235,6 +274,9 @@ export default function Agendamento() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Profissional *</label>
+                {profissionaisErro && (
+                  <p className="text-sm text-amber-600 mb-2">{profissionaisErro}</p>
+                )}
                 <select 
                   required
                   value={formData.profissional_id}
