@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 
 export default function Agendamento() {
   const [activeTab, setActiveTab] = useState<"agendar" | "consultar">("agendar");
+  const apiBaseUrl = import.meta.env.VITE_API_URL
+    ? String(import.meta.env.VITE_API_URL).replace(/\/$/, "")
+    : window.location.port === "5173"
+      ? `${window.location.protocol}//${window.location.hostname}:3000`
+      : "";
   
   // Agendar states
   const [especialidades, setEspecialidades] = useState<string[]>([]);
@@ -15,6 +20,10 @@ export default function Agendamento() {
     hora: ""
   });
   const [agendarMsg, setAgendarMsg] = useState({ text: "", type: "" });
+  const [especialidadesLoading, setEspecialidadesLoading] = useState(false);
+  const [especialidadesError, setEspecialidadesError] = useState("");
+  const [profissionaisLoading, setProfissionaisLoading] = useState(false);
+  const [profissionaisError, setProfissionaisError] = useState("");
 
   // Consultar states
   const [consultaCpf, setConsultaCpf] = useState("");
@@ -22,22 +31,67 @@ export default function Agendamento() {
   const [consultaMsg, setConsultaMsg] = useState("");
 
   useEffect(() => {
-    fetch("/api/especialidades")
-      .then(res => res.json())
-      .then(data => setEspecialidades(data.especialidades))
-      .catch(err => console.error(err));
-  }, []);
+    const carregarEspecialidades = async () => {
+      try {
+        setEspecialidadesLoading(true);
+        setEspecialidadesError("");
+
+        const res = await fetch(`${apiBaseUrl}/api/especialidades`);
+        if (!res.ok) throw new Error("Falha ao buscar especialidades");
+
+        const data = await res.json();
+        setEspecialidades(Array.isArray(data.especialidades) ? data.especialidades : []);
+      } catch (err) {
+        console.error(err);
+        setEspecialidades([]);
+        setEspecialidadesError(
+          "Não foi possível carregar as especialidades. Tente novamente em instantes."
+        );
+      } finally {
+        setEspecialidadesLoading(false);
+      }
+    };
+
+    carregarEspecialidades();
+  }, [apiBaseUrl]);
 
   useEffect(() => {
-    if (selectedEspecialidade) {
-      fetch(`/api/profissionais?especialidade=${encodeURIComponent(selectedEspecialidade)}`)
-        .then(res => res.json())
-        .then(data => setProfissionais(data.resultados))
-        .catch(err => console.error(err));
-    } else {
+    const carregarProfissionais = async () => {
+      if (!selectedEspecialidade) {
+        setProfissionais([]);
+        setProfissionaisError("");
+        return;
+      }
+
+      try {
+        setProfissionaisLoading(true);
+        setProfissionaisError("");
+        const res = await fetch(
+          `${apiBaseUrl}/api/profissionais?especialidade=${encodeURIComponent(selectedEspecialidade)}`
+        );
+        if (!res.ok) throw new Error("Falha ao buscar profissionais");
+
+        const data = await res.json();
+        setProfissionais(Array.isArray(data.resultados) ? data.resultados : []);
+      } catch (err) {
+        console.error(err);
+        setProfissionais([]);
+        setProfissionaisError(
+          "Não foi possível carregar os profissionais desta especialidade."
+        );
+      } finally {
+        setProfissionaisLoading(false);
+      }
+    };
+
+    setFormData((previous) => ({ ...previous, profissional_id: "" }));
+    if (!selectedEspecialidade) {
       setProfissionais([]);
+      setProfissionaisLoading(false);
+      setProfissionaisError("");
     }
-  }, [selectedEspecialidade]);
+    carregarProfissionais();
+  }, [selectedEspecialidade, apiBaseUrl]);
 
   const handleAgendar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +101,7 @@ export default function Agendamento() {
     const dataFormatada = `${dia}/${mes}/${ano}`;
 
     try {
-      const res = await fetch("/api/agendar", {
+      const res = await fetch(`${apiBaseUrl}/api/agendar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +132,7 @@ export default function Agendamento() {
     }
 
     try {
-      const res = await fetch("/api/consultar", {
+      const res = await fetch(`${apiBaseUrl}/api/consultar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cpf: consultaCpf })
@@ -102,7 +156,7 @@ export default function Agendamento() {
     if (!window.confirm("Tem certeza que deseja cancelar este agendamento?")) return;
 
     try {
-      const res = await fetch(`/api/cancelar/${id}`, { method: "DELETE" });
+      const res = await fetch(`${apiBaseUrl}/api/cancelar/${id}`, { method: "DELETE" });
       if (res.ok) {
         alert("Agendamento cancelado com sucesso");
         handleConsultar(); // Refresh list
@@ -173,12 +227,18 @@ export default function Agendamento() {
                   value={selectedEspecialidade}
                   onChange={e => setSelectedEspecialidade(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  disabled={especialidadesLoading}
                 >
-                  <option value="">Selecione uma especialidade</option>
+                  <option value="">
+                    {especialidadesLoading ? "Carregando especialidades..." : "Selecione uma especialidade"}
+                  </option>
                   {especialidades.map(esp => (
                     <option key={esp} value={esp}>{esp}</option>
                   ))}
                 </select>
+                {especialidadesError && (
+                  <p className="mt-2 text-sm text-red-600">{especialidadesError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Profissional *</label>
@@ -187,13 +247,22 @@ export default function Agendamento() {
                   value={formData.profissional_id}
                   onChange={e => setFormData({...formData, profissional_id: e.target.value})}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  disabled={!selectedEspecialidade}
+                  disabled={!selectedEspecialidade || profissionaisLoading || !!profissionaisError}
                 >
-                  <option value="">Selecione um profissional</option>
+                  <option value="">
+                    {!selectedEspecialidade
+                      ? "Selecione uma especialidade primeiro"
+                      : profissionaisLoading
+                        ? "Carregando profissionais..."
+                        : "Selecione um profissional"}
+                  </option>
                   {profissionais.map(prof => (
                     <option key={prof.id} value={prof.id}>{prof.nome}</option>
                   ))}
                 </select>
+                {profissionaisError && (
+                  <p className="mt-2 text-sm text-red-600">{profissionaisError}</p>
+                )}
               </div>
             </div>
 
