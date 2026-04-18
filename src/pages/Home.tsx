@@ -1,6 +1,33 @@
+import { useState } from "react";
 import Typebot from "../components/Typebot";
 
 export default function Home() {
+  const medicos = [
+    {
+      nome: "Dr. Ricardo Santos",
+      esp: "Clínico Geral",
+      descricao:
+        "Atua no atendimento integral de adultos, sendo o primeiro contato para avaliação de sintomas, prevenção e acompanhamento de doenças crônicas, com foco em check-ups e qualidade de vida.",
+      img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=500&auto=format&fit=crop",
+    },
+    {
+      nome: "Dra. Ana Oliveira",
+      esp: "Nutricionista",
+      descricao:
+        "Especialista em nutrição clínica e reeducação alimentar, elabora planos personalizados para emagrecimento saudável, controle metabólico e melhora da alimentação no dia a dia.",
+      img: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?q=80&w=500&auto=format&fit=crop",
+    },
+    {
+      nome: "Dra. Beatriz Costa",
+      esp: "Cardiologista",
+      descricao:
+        "Cuida da saúde do coração com foco em prevenção, diagnóstico e acompanhamento de doenças cardiovasculares, avaliando pressão alta, palpitações e outros sintomas cardíacos.",
+      img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=500&auto=format&fit=crop",
+    },
+  ];
+
+  const [medicoSelecionado, setMedicoSelecionado] = useState<(typeof medicos)[number] | null>(null);
+
   return (
     <div>
       {/* Hero Section */}
@@ -50,18 +77,32 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-4xl font-bold text-center text-slate-800 mb-16">Nossa Equipe</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { nome: "Dr. Ricardo Santos", esp: "Clínico Geral", img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=500&auto=format&fit=crop" },
-              { nome: "Dra. Ana Oliveira", esp: "Nutricionista", img: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?q=80&w=500&auto=format&fit=crop" },
-              { nome: "Dra. Beatriz Costa", esp: "Cardiologista", img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=500&auto=format&fit=crop" }
-            ].map((medico, i) => (
-              <div key={i} className="bg-white p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
+            {medicos.map((medico, i) => (
+              <button
+                type="button"
+                key={i}
+                onClick={() => setMedicoSelecionado(medico)}
+                className="bg-white p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow border border-transparent hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <img src={medico.img} alt={medico.nome} className="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-blue-50" referrerPolicy="no-referrer" />
                 <h4 className="text-xl font-bold text-slate-800">{medico.nome}</h4>
                 <p className="text-blue-600 font-medium">{medico.esp}</p>
-              </div>
+                <p className="text-slate-500 text-sm mt-3">Clique para ver o perfil completo</p>
+              </button>
             ))}
           </div>
+          {medicoSelecionado && (
+            <div className="mt-10 bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+              <h3 className="text-2xl font-bold text-slate-800">{medicoSelecionado.nome}</h3>
+              <p className="text-blue-600 font-semibold mt-1">{medicoSelecionado.esp}</p>
+              <p className="text-slate-600 mt-4 leading-relaxed">{medicoSelecionado.descricao}</p>
+              <div className="mt-6">
+                <a href="/agendamento" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                  Agendar com este especialista
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

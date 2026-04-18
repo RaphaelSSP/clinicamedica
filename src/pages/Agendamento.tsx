@@ -7,6 +7,7 @@ export default function Agendamento() {
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [profissionais, setProfissionais] = useState<any[]>([]);
   const [selectedEspecialidade, setSelectedEspecialidade] = useState("");
+  const [especialidadesErro, setEspecialidadesErro] = useState("");
   const [formData, setFormData] = useState({
     nome: "",
     cpf: "",
@@ -23,17 +24,61 @@ export default function Agendamento() {
 
   useEffect(() => {
     fetch("/api/especialidades")
-      .then(res => res.json())
-      .then(data => setEspecialidades(data.especialidades))
-      .catch(err => console.error(err));
+      .then(async res => {
+        const data = await res.json();
+        // #region agent log
+        fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2',location:'src/pages/Agendamento.tsx:26',message:'especialidades response received',data:{ok:res.ok,status:res.status,hasEspecialidades:Array.isArray(data?.especialidades),total:data?.total},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        if (!res.ok || !Array.isArray(data?.especialidades)) {
+          throw new Error("Resposta inválida da API de especialidades");
+        }
+        return data;
+      })
+      .then(data => {
+        setEspecialidades(data.especialidades);
+        setEspecialidadesErro("");
+      })
+      .catch(err => {
+        // #region agent log
+        fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1',location:'src/pages/Agendamento.tsx:31',message:'especialidades fetch failed',data:{error:String(err)},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        // Fallback: derive specialties from professionals endpoint.
+        fetch("/api/profissionais")
+          .then(async profRes => {
+            const profData = await profRes.json();
+            const lista = Array.isArray(profData?.resultados) ? profData.resultados : [];
+            const derivadas = Array.from(new Set(lista.map((p: any) => p?.especialidade).filter(Boolean))).sort() as string[];
+            setEspecialidades(derivadas);
+            setEspecialidadesErro(derivadas.length > 0 ? "" : "Não foi possível carregar especialidades no momento.");
+            // #region agent log
+            fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2',location:'src/pages/Agendamento.tsx:42',message:'especialidades fallback executed',data:{ok:profRes.ok,derivadas:derivadas.length},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+          })
+          .catch(() => setEspecialidadesErro("Não foi possível carregar especialidades no momento."));
+        console.error(err);
+      });
   }, []);
 
   useEffect(() => {
     if (selectedEspecialidade) {
+      // #region agent log
+      fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H3_H4',location:'src/pages/Agendamento.tsx:36',message:'selectedEspecialidade changed',data:{selectedEspecialidade},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       fetch(`/api/profissionais?especialidade=${encodeURIComponent(selectedEspecialidade)}`)
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json();
+          // #region agent log
+          fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4',location:'src/pages/Agendamento.tsx:40',message:'profissionais response received',data:{ok:res.ok,status:res.status,total:data?.total,resultadosLength:Array.isArray(data?.resultados)?data.resultados.length:null},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+          return data;
+        })
         .then(data => setProfissionais(data.resultados))
-        .catch(err => console.error(err));
+        .catch(err => {
+          // #region agent log
+          fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4',location:'src/pages/Agendamento.tsx:45',message:'profissionais fetch failed',data:{error:String(err),selectedEspecialidade},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+          console.error(err);
+        });
     } else {
       setProfissionais([]);
     }
@@ -168,10 +213,18 @@ export default function Agendamento() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Especialidade *</label>
+                {especialidadesErro && (
+                  <p className="text-sm text-red-600 mb-2">{especialidadesErro}</p>
+                )}
                 <select 
                   required
                   value={selectedEspecialidade}
-                  onChange={e => setSelectedEspecialidade(e.target.value)}
+                  onChange={e => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H3',location:'src/pages/Agendamento.tsx:189',message:'especialidade select onChange fired',data:{value:e.target.value},timestamp:Date.now()})}).catch(()=>{});
+                    // #endregion
+                    setSelectedEspecialidade(e.target.value);
+                  }}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="">Selecione uma especialidade</option>
