@@ -4,7 +4,9 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
-import { Pool } from "pg";
+import pkg from "pg";
+
+const { Pool } = pkg;
 
 const app = express();
 const PORT = 3000;
@@ -24,7 +26,11 @@ app.use((req, res, next) => {
 
 // PostgreSQL setup
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || "postgres://postgres:password@localhost:5432/clinica",
+  host: "127.0.0.1",
+  port: 5432,
+  user: "postgres",
+  password: "SenhaForte@123",
+  database: "clinica",
 });
 
 let useDb = false;
