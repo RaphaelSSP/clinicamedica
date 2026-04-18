@@ -140,18 +140,24 @@ export default function Agendamento() {
           data: dataFormatada
         })
       });
-      
-      const data = await res.json();
+
+      const raw = await res.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { detail: raw || "Resposta inválida do servidor" };
+      }
       
       if (res.ok) {
         setAgendarMsg({ text: `✓ Agendamento realizado com sucesso! ID: ${data.agendamento.id}`, type: "success" });
         setFormData({ nome: "", cpf: "", profissional_id: "", data: "", hora: "" });
         setSelectedEspecialidade("");
       } else {
-        setAgendarMsg({ text: `Erro: ${data.detail || 'Não foi possível realizar o agendamento'}`, type: "error" });
+        setAgendarMsg({ text: `Erro: ${data.detail || data.error || "Não foi possível realizar o agendamento"}`, type: "error" });
       }
     } catch (error) {
-      setAgendarMsg({ text: "Erro ao conectar com o servidor", type: "error" });
+      setAgendarMsg({ text: "Erro ao conectar com o servidor da API. Verifique se o backend está rodando.", type: "error" });
     }
   };
 

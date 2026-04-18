@@ -26,11 +26,12 @@ app.use((req, res, next) => {
 
 // PostgreSQL setup
 const pool = new Pool({
-  host: "127.0.0.1",
-  port: 5432,
-  user: "postgres",
-  password: "SenhaForte@123",
-  database: "clinica",
+  connectionString: process.env.DATABASE_URL,
+  host: process.env.PGHOST || "127.0.0.1",
+  port: Number(process.env.PGPORT || 5432),
+  user: process.env.PGUSER || "postgres",
+  password: process.env.PGPASSWORD || "SuaSenha@123",
+  database: process.env.PGDATABASE || "clinica",
 });
 
 let useDb = false;
@@ -81,6 +82,7 @@ pool.connect()
   })
   .catch((err) => {
     console.log("PostgreSQL not available. Falling back to local JSON storage for preview environment.");
+    console.error("PostgreSQL connection error:", err instanceof Error ? err.message : err);
   });
 
 // Mock data storage (Fallback)
