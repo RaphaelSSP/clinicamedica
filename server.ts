@@ -114,6 +114,9 @@ const saveAgendamentos = (data: any) => fs.writeFileSync(AGENDAMENTOS_FILE, JSON
 // API Routes
 app.get("/api/profissionais", async (req, res) => {
   const { especialidade, nome } = req.query;
+  // #region agent log
+  fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4_H5',location:'server.ts:117',message:'api profissionais request',data:{useDb,especialidade,nome},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   
   if (useDb) {
     try {
@@ -135,6 +138,9 @@ app.get("/api/profissionais", async (req, res) => {
       }
 
       const result = await pool.query(query, values);
+      // #region agent log
+      fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4_H5',location:'server.ts:139',message:'api profissionais response db',data:{total:result.rows.length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       res.json({ total: result.rows.length, resultados: result.rows });
     } catch (err) {
       res.status(500).json({ error: "Database error" });
@@ -147,15 +153,24 @@ app.get("/api/profissionais", async (req, res) => {
     if (nome) {
       profissionais = profissionais.filter((p: any) => p.nome.toLowerCase().includes((nome as string).toLowerCase()));
     }
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H4_H5',location:'server.ts:152',message:'api profissionais response fallback',data:{total:profissionais.length,useDb},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     res.json({ total: profissionais.length, resultados: profissionais });
   }
 });
 
 app.get("/api/especialidades", async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2_H5',location:'server.ts:159',message:'api especialidades request',data:{useDb},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   if (useDb) {
     try {
       const result = await pool.query("SELECT DISTINCT especialidade FROM profissionais ORDER BY especialidade");
       const especialidades = result.rows.map(r => r.especialidade);
+      // #region agent log
+      fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2_H5',location:'server.ts:165',message:'api especialidades response db',data:{total:especialidades.length,first:especialidades[0] ?? null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       res.json({ total: especialidades.length, especialidades });
     } catch (err) {
       res.status(500).json({ error: "Database error" });
@@ -163,6 +178,9 @@ app.get("/api/especialidades", async (req, res) => {
   } else {
     const profissionais = loadProfessionals();
     const especialidades = Array.from(new Set(profissionais.map((p: any) => p.especialidade))).sort();
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H1_H2_H5',location:'server.ts:173',message:'api especialidades response fallback',data:{total:especialidades.length,first:especialidades[0] ?? null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     res.json({ total: especialidades.length, especialidades });
   }
 });
@@ -318,6 +336,9 @@ app.post("/api/chat", (req, res) => {
 });
 
 async function startServer() {
+  // #region agent log
+  fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H6_H7',location:'server.ts:339',message:'startServer invoked',data:{nodeEnv:process.env.NODE_ENV ?? null},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -333,6 +354,9 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/2ab3fe32-aef3-4b4a-9b84-d597bfde7be3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6611e7'},body:JSON.stringify({sessionId:'6611e7',runId:'initial',hypothesisId:'H6_H7',location:'server.ts:355',message:'server listen callback fired',data:{port:PORT},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
